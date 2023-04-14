@@ -1,0 +1,44 @@
+openapi: 3.0.0
+
+info:
+  title: Sandbox API
+  version: 1.0.0
+
+paths:
+  /events:
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                event1:
+                  type: string
+                event2:
+                  type: string
+                event3:
+                  type: string
+              required:
+                - event1
+                - event2
+                - event3
+      x-amazon-apigateway-integration:
+        type: aws
+        uri: arn:aws:apigateway:${AWS::Region}:events:action/PutEvents
+        httpMethod: POST
+        credentials: arn:aws:iam::${AWS::AccountId}:role/sandbox-api-gateway-execution-role
+        responses:
+          default:
+            statusCode: 200
+        requestTemplates:
+          application/json: "#set($context.requestOverride.header.X-Amz-Target = \"\
+            AWSEvents.PutEvents\")\n#set($context.requestOverride.header.Content-Type\
+            \ = \"application/x-amz-json-1.1\")\n{\n\t\"Entries\": [{\n\t\t\"EventBusName\"\
+            : \"sandbox-event-bus\",\n\t\t\"Detail\": \"$util.escapeJavaScript($input.json('$'))\"\
+            ,\n\t\t\"DetailType\": \"sandbox-detail-type\",\n\t\t\"Source\": \"sandbox-source\"\
+            \n\t}]\n}"
+        passthroughBehavior: when_no_templates
+      responses:
+        '200':
+          description: OK
